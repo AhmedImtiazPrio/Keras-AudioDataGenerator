@@ -5,7 +5,7 @@
 The Audio Data Generator generates batches of audio data with real-time data augmentation.
 Data is looped over in batches. This method enables audio augmentation is CPU while training in parallel on the GPU.
 
-### Basic Usage:
+## Basic Usage:
 
 ```
 from AudioDataGenerator import AudioDataGenerator
@@ -24,9 +24,10 @@ model.fit_generator(datagen.flow(x_train,y_train,batch_size=32),
                     epochs = 100)
 ```
 
-### Parameters:
+## Parameters:
 
 The following are the currently available augmentation parameters.
+
 **featurewise_center**: *Boolean*. Set input mean to 0 over the dataset, feature-wise.
 
 **samplewise_center**: *Boolean*. Set each sample mean to 0.
