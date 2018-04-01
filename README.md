@@ -24,7 +24,7 @@ model.fit_generator(datagen.flow(x_train,y_train,batch_size=32),
                     epochs = 100)
 ```
 
-## Parameters:
+## Arguments:
 
 The following are the currently available augmentation parameters.
 
@@ -68,7 +68,32 @@ The following are the currently available augmentation parameters.
 - The function should take one argument:
   - one audio (Numpy tensor with rank 2),
   - should output a Numpy tensor with the same shape.
-  
+
+**brightness_range**: Tuple or list of *Float*. Range for adding random gain to the audio. Doesn't have any effect if normalization is performed.
+
 **data_format**: One of *{"channels_first", "channels_last"}*. "channels_last" mode means that the audio should have shape `(samples, width, channels)`, "channels_first" mode means that the images should have shape `(samples, channels, width)`. It defaults to the `image_data_format` value found in your Keras config file at `~/.keras/keras.json`. If you never set it, then it will be "channels_last".
 
 **validation_split**: *Float*. Fraction of images reserved for validation (strictly between 0 and 1).
+
+## Methods:
+
+### `.fit()` Method
+Compute the internal data stats related to the data-dependent transformations, based on an array of sample data. Only required if featurewise_center or featurewise_std_normalization or zca_whitening is `True`.
+```
+datagen.fit(x_train,seed=1)
+```
+### `.flow()` Method
+Creates an iterable with batches. The iterator iterates indefinitely, therefore loops need to be manually broken.
+```
+batch_size = 32
+for epoch in range(epochs):
+    batch = 0
+    for x_batch, y_batch in datagen.flow(x_train, y_train, batch_size=batch_size, shuffle=True):
+        model.fit(x_batch, y_batch)
+        batch += 1
+        if batch >= len(x_train) / 32:
+            break
+```
+
+### `.flow_from_directory()` Method
+Not Implemented
