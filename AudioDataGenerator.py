@@ -37,7 +37,7 @@ class NumpyArrayIterator(Iterator):
                  save_to_dir=None, save_prefix='', save_format='png',
                  subset=None):
         if y is not None and len(x) != len(y):
-            raise ValueError('`x` (images tensor) and `y` (labels) '
+            raise ValueError('`x` (audio tensor) and `y` (labels) '
                              'should have the same length. '
                              'Found: x.shape = %s, y.shape = %s' %
                              (np.asarray(x).shape, np.asarray(y).shape))
