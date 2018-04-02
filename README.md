@@ -39,7 +39,7 @@ The following are the currently available augmentation parameters.
 **zca_epsilon**: epsilon for ZCA whitening. Default is *1e-6*.
 
 **zca_whitening**: *Boolean*. Apply ZCA whitening.
-
+###### Note: Make sure to apply zca_whitening when using a separate validation set.
 **roll_range**: *Float* (fraction of total sample length). Range for horizontal circular shifts.
 
 **horizontal_flip**: *Boolean*. Randomly flip inputs horizontally.
