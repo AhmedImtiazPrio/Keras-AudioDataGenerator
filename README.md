@@ -71,9 +71,9 @@ The following are the currently available augmentation parameters.
 
 **brightness_range**: Tuple or list of *Float*. Range for adding random gain to the audio. Doesn't have any effect if normalization is performed.
 
-**data_format**: One of *{"channels_first", "channels_last"}*. "channels_last" mode means that the audio should have shape `(samples, width, channels)`, "channels_first" mode means that the images should have shape `(samples, channels, width)`. It defaults to the `image_data_format` value found in your Keras config file at `~/.keras/keras.json`. If you never set it, then it will be "channels_last".
+**data_format**: One of *{"channels_first", "channels_last"}*. "channels_last" mode means that the audio should have shape `(samples, width, channels)`, "channels_first" mode means that the data should have shape `(samples, channels, width)`. It defaults to the `image_data_format` value found in your Keras config file at `~/.keras/keras.json`. If you never set it, then it will be "channels_last".
 
-**validation_split**: *Float*. Fraction of images reserved for validation (strictly between 0 and 1).
+**validation_split**: *Float*. Fraction of data reserved for validation (strictly between 0 and 1).
 
 ## Methods:
 
