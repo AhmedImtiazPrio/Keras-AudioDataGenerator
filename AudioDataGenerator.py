@@ -105,7 +105,7 @@ class NumpyArrayIterator(Iterator):
         # the indexing of each batch.
         with self.lock:
             index_array = next(self.index_generator)
-        # The transformation of images is not under thread lock
+        # The transformation of audio is not under thread lock
         # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
 
@@ -145,8 +145,7 @@ class AudioDataGenerator(object):
                 Doesn't have any effect if normalization is performed.
         data_format: One of {"channels_first", "channels_last"}. 
                 "channels_last" mode means that the audio should have shape (samples, width, channels)
-                "channels_first" mode means that the images should have shape (samples, channels, width). 
-                It defaults to the image_data_format value found in your Keras config file at ~/.keras/keras.json.
+                "channels_first" mode means that the audio should have shape (samples, channels, width).
                 If you never set it, then it will be "channels_last".
         validation_split: Float. Fraction of audio reserved for validation (strictly between 0 and 1).
    
@@ -221,19 +220,19 @@ class AudioDataGenerator(object):
         if zca_whitening:
             if not featurewise_center:
                 self.featurewise_center = True
-                warnings.warn('This ImageDataGenerator specifies '
+                warnings.warn('This AudioDataGenerator specifies '
                               '`zca_whitening`, which overrides '
                               'setting of `featurewise_center`.')
             if featurewise_std_normalization:
                 self.featurewise_std_normalization = False
-                warnings.warn('This ImageDataGenerator specifies '
+                warnings.warn('This AudioDataGenerator specifies '
                               '`zca_whitening` '
                               'which overrides setting of'
                               '`featurewise_std_normalization`.')
         if featurewise_std_normalization:
             if not featurewise_center:
                 self.featurewise_center = True
-                warnings.warn('This ImageDataGenerator specifies '
+                warnings.warn('This AudioDataGenerator specifies '
                               '`featurewise_std_normalization`, '
                               'which overrides setting of '
                               '`featurewise_center`.')
@@ -268,7 +267,7 @@ class AudioDataGenerator(object):
                 to which to save the augmented audio being generated
 
         # Returns
-            An Iterator yielding tuples of `(x, y)` where `x` is a numpy array of image data and
+            An Iterator yielding tuples of `(x, y)` where `x` is a numpy array of data and
              `y` is a numpy array of corresponding labels."""
         if self.noise:
             shuffle=True
@@ -351,7 +350,7 @@ class AudioDataGenerator(object):
         # Returns
             A randomly transformed version of the input (same shape).
         """
-        # x is a single audio, so it doesn't have image number at index 0
+        # x is a single audio
         img_row_axis = self.row_axis - 1
         img_channel_axis = self.channel_axis - 1
 
@@ -413,7 +412,7 @@ class AudioDataGenerator(object):
                              'Got array with shape: ' + str(x.shape))
         if x.shape[self.channel_axis] not in {1, 3, 4}:
             warnings.warn(
-                'Expected input to be images (as Numpy array) '
+                'Expected input to be tensor (as Numpy array) '
                 'following the data format convention "' + self.data_format + '" '
                 '(channels on axis ' + str(self.channel_axis) + '), i.e. expected '
                 'either 1, 3 or 4 channels on axis ' + str(self.channel_axis) + '. '
