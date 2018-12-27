@@ -34,7 +34,7 @@ class NumpyArrayIterator(Iterator):
     def __init__(self, x, y, audio_data_generator,
                  batch_size=32, shuffle=False, seed=None,
                  data_format=None,
-                 save_to_dir=None, save_prefix='', save_format='png',
+                 save_to_dir=None, save_prefix='', save_format='wav',
                  subset=None):
         if y is not None and len(x) != len(y):
             raise ValueError('`x` (audio tensor) and `y` (labels) '
@@ -137,17 +137,18 @@ class AudioDataGenerator(object):
                 otherwise we multiply the data by the value provided (before applying
                 any other transformation).
         preprocessing_function: function that will be implied on each input.
-                The function will run after the image is resized and augmented.
+                The function will run after the audio is augmented.
                 The function should take one argument:
-                one image (Numpy tensor with rank 3),
+                one audio (Numpy tensor with rank 2),
                 and should output a Numpy tensor with the same shape.
-        data_format: One of {"channels_first", "channels_last"}.
-            "channels_last" mode means that the images should have shape `(samples, height, width, channels)`,
-            "channels_first" mode means that the images should have shape `(samples, channels, height, width)`.
-            It defaults to the `image_data_format` value found in your
-            Keras config file at `~/.keras/keras.json`.
-            If you never set it, then it will be "channels_last".
-        validation_split: Float. Fraction of images reserved for validation (strictly between 0 and 1).
+        brightness_range: Tuple or list of Float. Range for adding random gain to the audio.
+                Doesn't have any effect if normalization is performed.
+        data_format: One of {"channels_first", "channels_last"}. 
+                "channels_last" mode means that the audio should have shape (samples, width, channels)
+                "channels_first" mode means that the images should have shape (samples, channels, width). 
+                It defaults to the image_data_format value found in your Keras config file at ~/.keras/keras.json.
+                If you never set it, then it will be "channels_last".
+        validation_split: Float. Fraction of audio reserved for validation (strictly between 0 and 1).
    
     """
 
@@ -253,25 +254,19 @@ class AudioDataGenerator(object):
             
 
     def flow(self, x, y=None, batch_size=32, shuffle=True, seed=None,
-             save_to_dir=None, save_prefix='', save_format='png', subset=None):
+             save_to_dir=None, save_prefix='', subset=None):
         """Takes numpy data & label arrays, and generates batches of
             augmented/normalized data.
         # Arguments
-               x: data. Should have rank 4.
-                In case of grayscale data,
-                the channels axis should have value 1, and in case
-                of RGB data, it should have value 3.
+               x: data. Should have rank 3.
                y: labels.
                batch_size: int (default: 32).
                shuffle: boolean (default: True).
                seed: int (default: None).
                save_to_dir: None or str (default: None).
                 This allows you to optionally specify a directory
-                to which to save the augmented pictures being generated
-                (useful for visualizing what you are doing).
-               save_prefix: str (default: `''`). Prefix to use for filenames of saved pictures
-                (only relevant if `save_to_dir` is set).
-                save_format: one of "png", "jpeg" (only relevant if `save_to_dir` is set). Default: "png".
+                to which to save the augmented audio being generated
+
         # Returns
             An Iterator yielding tuples of `(x, y)` where `x` is a numpy array of image data and
              `y` is a numpy array of corresponding labels."""
@@ -289,7 +284,6 @@ class AudioDataGenerator(object):
             data_format=self.data_format,
             save_to_dir=save_to_dir,
             save_prefix=save_prefix,
-            save_format=save_format,
             subset=subset)
 
     def flow_from_directory(self, directory,
@@ -302,43 +296,7 @@ class AudioDataGenerator(object):
                             follow_links=False,
                             subset=None,
                             interpolation='nearest'):
-        """Takes the path to a directory, and generates batches of augmented/normalized data.
-        # Arguments
-                directory: path to the target directory.
-                 It should contain one subdirectory per class.
-                 Any PNG, JPG, BMP, PPM or TIF images inside each of the subdirectories directory tree will be included in the generator.
-                See [this script](https://gist.github.com/fchollet/0830affa1f7f19fd47b06d4cf89ed44d) for more details.
-                target_size: tuple of integers `(height, width)`, default: `(256, 256)`.
-                 The dimensions to which all images found will be resized.
-                color_mode: one of "grayscale", "rbg". Default: "rgb".
-                 Whether the images will be converted to have 1 or 3 color channels.
-                classes: optional list of class subdirectories (e.g. `['dogs', 'cats']`).
-                 Default: None. If not provided, the list of classes will
-                 be automatically inferred from the subdirectory names/structure under `directory`,
-                 where each subdirectory will be treated as a different class
-                 (and the order of the classes, which will map to the label indices, will be alphanumeric).
-                 The dictionary containing the mapping from class names to class
-                 indices can be obtained via the attribute `class_indices`.
-                class_mode: one of "categorical", "binary", "sparse", "input" or None.
-                 Default: "categorical". Determines the type of label arrays that are
-                 returned: "categorical" will be 2D one-hot encoded labels, "binary" will be 1D binary labels,
-                 "sparse" will be 1D integer labels, "input" will be images identical to input images (mainly used to work with autoencoders).
-                 If None, no labels are returned (the generator will only yield batches of image data, which is useful to use
-                 `model.predict_generator()`, `model.evaluate_generator()`, etc.).
-                  Please note that in case of class_mode None,
-                   the data still needs to reside in a subdirectory of `directory` for it to work correctly.
-                batch_size: size of the batches of data (default: 32).
-                shuffle: whether to shuffle the data (default: True)
-                seed: optional random seed for shuffling and transformations.
-                save_to_dir: None or str (default: None). This allows you to optionally specify a directory to which to save
-                 the augmented pictures being generated (useful for visualizing what you are doing).
-                save_prefix: str. Prefix to use for filenames of saved pictures (only relevant if `save_to_dir` is set).
-                save_format: one of "png", "jpeg" (only relevant if `save_to_dir` is set). Default: "png".
-                follow_links: whether to follow symlinks inside class subdirectories (default: False).
-        # Returns
-            A DirectoryIterator yielding tuples of `(x, y)` where `x` is a numpy array of image data and
-             `y` is a numpy array of corresponding labels.
-        """
+
         raise NotImplementedError
 
     def standardize(self, x):
@@ -386,7 +344,7 @@ class AudioDataGenerator(object):
         return x
 
     def random_transform(self, x, seed=None):
-        """Randomly augment a single image tensor.
+        """Randomly augment a single tensor.
         # Arguments
             x: 2D tensor.
             seed: random seed.
