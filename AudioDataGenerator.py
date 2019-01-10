@@ -351,36 +351,36 @@ class AudioDataGenerator(object):
             A randomly transformed version of the input (same shape).
         """
         # x is a single audio
-        img_row_axis = self.row_axis - 1
-        img_channel_axis = self.channel_axis - 1
+        data_row_axis = self.row_axis - 1
+        data_channel_axis = self.channel_axis - 1
 
         if seed is not None:
             np.random.seed(seed)
             
         if not (self.zoom_range[0] == 1 and self.zoom_range[1] == 1):
             zx = np.random.uniform(self.zoom_range[0], self.zoom_range[1])
-            input_length = x.shape[img_row_axis]
-            x = resample(x, num=int(zx*x.shape[img_row_axis]), axis=img_row_axis)
-            if x.shape[img_row_axis] >= input_length:
+            input_length = x.shape[data_row_axis]
+            x = resample(x, num=int(zx*x.shape[data_row_axis]), axis=data_row_axis)
+            if x.shape[data_row_axis] >= input_length:
                 x = x[:input_length]
             else:
-                x = np.pad(x, ((0, input_length-x.shape[img_row_axis]),(0,0)),
+                x = np.pad(x, ((0, input_length-x.shape[data_row_axis]),(0,0)),
                            'constant',constant_values=(0,np.mean(x)))
         
         if shift:
             hx = np.random.uniform(-self.shift,self.shift)
-            x = shift(x , (int(hx*x.shape[img_row_axis]),0), mode=self.fill_mode, cval=self.cval)
+            x = shift(x , (int(hx*x.shape[data_row_axis]),0), mode=self.fill_mode, cval=self.cval)
             
 
         if self.roll_range:
             tx = np.random.uniform(-self.roll_range, self.roll_range)
             if self.roll_range < 1:
-                tx *= x.shape[img_row_axis]
-            x = np.roll(x, int(tx), axis=(img_row_axis))        
+                tx *= x.shape[data_row_axis]
+            x = np.roll(x, int(tx), axis=(data_row_axis))        
         
         if self.horizontal_flip:
             if np.random.random() < 0.5:
-                x = np.flip(x,axis=img_row_axis)
+                x = np.flip(x,axis=data_row_axis)
                 
         if (self.noise):
             if np.random.random() < 0.5:
