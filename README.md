@@ -91,7 +91,7 @@ for epoch in range(epochs):
     for x_batch, y_batch in datagen.flow(x_train, y_train, batch_size=batch_size, shuffle=True):
         model.fit(x_batch, y_batch)
         batch += 1
-        if batch >= len(x_train) / 32:
+        if batch >= len(x_train) / batch_size :
             break
 ```
 
