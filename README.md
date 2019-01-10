@@ -3,7 +3,7 @@
 ###### Note: For analogy with Image Data Generator, please read the [ImageDataGenerator](https://keras.io/preprocessing/image/) documentation.
 
 The Audio Data Generator generates batches of audio data with real-time data augmentation.
-Data is looped over in batches. This method enables audio augmentation is CPU while training in parallel on the GPU.
+Data is looped over in batches. This method enables audio augmentation in CPU while training in parallel on the GPU.
 
 ## Basic Usage:
 
