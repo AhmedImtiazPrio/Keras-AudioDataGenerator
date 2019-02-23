@@ -6,6 +6,7 @@ from scipy.signal import resample
 import keras.backend as K
 import warnings
 from scipy.ndimage.interpolation import shift
+from keras.utils import to_categorical
 
 
 class NumpyArrayIterator(Iterator):
