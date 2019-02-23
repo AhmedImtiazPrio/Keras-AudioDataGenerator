@@ -25,7 +25,6 @@ model.fit_generator(datagen.flow(x_train,y_train,batch_size=32),
                     steps_per_epoch = len(x_train)/32,
                     epochs = 100)
 ```
-
 ## Arguments:
 
 The following are the currently available augmentation parameters.
@@ -76,6 +75,12 @@ The following are the currently available augmentation parameters.
 **data_format**: One of *{"channels_first", "channels_last"}*. "channels_last" mode means that the audio should have shape `(samples, width, channels)`, "channels_first" mode means that the data should have shape `(samples, channels, width)`. It defaults to the `image_data_format` value found in your Keras config file at `~/.keras/keras.json`. If you never set it, then it will be "channels_last".
 
 **validation_split**: *Float*. Fraction of data reserved for validation (strictly between 0 and 1).
+
+## Dependencies:
+
+- Keras
+- Scipy
+- Numpy
 
 ## Methods:
 
