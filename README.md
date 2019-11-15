@@ -1,6 +1,6 @@
 # Keras-AudioDataGenerator
-### Augmented Audio Data Generator for 1D-Convolutional Neural Networks 
-###### Note: For analogy with Image Data Generator, please read the [ImageDataGenerator](https://keras.io/preprocessing/image/) documentation.
+### Augmented Audio Data Generator for 1D-Convolutional Neural Networks
+###### Note: For analogy with Image Data Generator, please read the [ImageDataGenerator](https://keras.io/preprocessing/image/) documentation. Also has a balanced data generator that creates balanced mini-batches.
 
 The Audio Data Generator generates batches of audio data with real-time data augmentation.
 Data is looped over in batches. This method enables audio augmentation in CPU while training in parallel on the GPU. Code is tested on Linux computers. CPU usage should look something like this during GPU training:
