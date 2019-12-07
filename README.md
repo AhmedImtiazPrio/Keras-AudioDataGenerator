@@ -87,7 +87,8 @@ The following are the currently available augmentation parameters.
 
 **meta_label**: *array like y_train*. This label defines the criteria on which the balancing is done.
 ```
-For example : A binary classification problem has data from 3 different sources. So class labels are [0,1], domains labels are [0,1,2]
+For example : A binary classification problem has data from 3 different sources.
+So class labels are [0,1], domains labels are [0,1,2]
 So there are 6 unique class available for each data depending of the combination of (class, domain). 
 
 | Class | Domain | Meta_label
