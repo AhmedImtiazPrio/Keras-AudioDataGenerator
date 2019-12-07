@@ -8,6 +8,7 @@ Data is looped over in batches. This method enables audio augmentation in CPU wh
 ![CPU Usage during GPU training](https://github.com/AhmedImtiazPrio/Keras-AudioDataGenerator/blob/master/audiodatagenerator.jpg "Audio Data Augmentation in CPU during GPU training")
 
 ## Basic Usage:
+Single Y
 
 ```
 from AudioDataGenerator import AudioDataGenerator
@@ -25,6 +26,14 @@ model.fit_generator(datagen.flow(x_train,y_train,batch_size=32),
                     steps_per_epoch = len(x_train)/32,
                     epochs = 100)
 ```
+Multiple labels (y data) can be passed as a list. Data can be balanced depending on multiple labels but in that case an additional label (meta_label) is required. (See arguments)
+
+```
+model.fit_generator(datagen.flow(x_train,[y_instrument,y_artist,y_genre],batch_size=32),
+                    steps_per_epoch = len(x_train)/32,
+                    epochs = 100)
+```
+
 ## Arguments:
 
 The following are the currently available augmentation parameters.
