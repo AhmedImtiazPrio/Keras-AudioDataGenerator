@@ -8,7 +8,6 @@ Data is looped over in batches. This method enables audio augmentation in CPU wh
 ![CPU Usage during GPU training](https://github.com/AhmedImtiazPrio/Keras-AudioDataGenerator/blob/master/audiodatagenerator.jpg "Audio Data Augmentation in CPU during GPU training")
 
 ## Basic Usage:
-Single Y
 
 ```
 from AudioDataGenerator import AudioDataGenerator
