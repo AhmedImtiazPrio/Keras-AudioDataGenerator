@@ -25,6 +25,15 @@ model.fit_generator(datagen.flow(x_train,y_train,batch_size=32),
                     steps_per_epoch = len(x_train)/32,
                     epochs = 100)
 ```
+Multiple labels (y data) can be passed as a list. 
+Data can be balanced depending on multiple labels but in that case an additional label (meta_label) is required with **BalancedAudioDataGenerator** instead of  **AudioDataGenerator**. (See arguments)
+
+```
+model.fit_generator(datagen.flow(x_train,**[y_instrument,y_artist,y_genre]**,batch_size=32),
+                    steps_per_epoch = len(x_train)/32,
+                    epochs = 100)
+```
+
 ## Arguments:
 
 The following are the currently available augmentation parameters.
@@ -76,6 +85,22 @@ The following are the currently available augmentation parameters.
 
 **validation_split**: *Float*. Fraction of data reserved for validation (strictly between 0 and 1).
 
+**meta_label**: *array like y_train*. This label defines the criteria on which the balancing is done.
+```
+For example : A binary classification problem has data from 3 different sources.
+So class labels are [0,1], domains labels are [0,1,2]
+So there are 6 unique class available for each data depending of the combination of (class, domain). 
+
+| Class | Domain | Meta_label
+:   0   :   0    :   0
+:   0   :   1    :   1
+:   0   :   2    :   2
+:   1   :   0    :   3
+:   1   :   1    :   4
+:   1   :   2    :   5
+
+```
+###### Note: This feature is used to balance the training data using the **BalancedAudioDataGenerator** class
 ## Dependencies:
 
 - Keras

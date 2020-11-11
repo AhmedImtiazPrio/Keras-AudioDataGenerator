@@ -38,11 +38,20 @@ class NumpyArrayIterator(Iterator):
                  data_format=None,
                  save_to_dir=None, save_prefix='', save_format='wav',
                  subset=None):
-        if y is not None and len(x) != len(y):
-            raise ValueError('`x` (audio tensor) and `y` (labels) '
+
+        if y is not None:
+            if(isinstance(y, np.ndarray)):
+                if len(x) != len(y):
+                    raise ValueError('`x` (audio tensor) and `y` (labels) '
                              'should have the same length. '
                              'Found: x.shape = %s, y.shape = %s' %
                              (np.asarray(x).shape, np.asarray(y).shape))
+            elif(isinstance(y, list)):
+                if len(x) != len(y[0]):
+                    raise ValueError('`x` (audio tensor) and `y` (labels) '
+                             'should have the same length. '
+                             'Found: x.shape = %s, y.shape = %s' %
+                             (np.asarray(x).shape, np.asarray(y[0]).shape))
         if subset is not None:
             if subset not in {'training', 'validation'}:
                 raise ValueError('Invalid subset name:', subset,
@@ -69,10 +78,14 @@ class NumpyArrayIterator(Iterator):
                           'data format convention "' + data_format + '" '
                           '(channels on axis ' + str(channels_axis) + '), i.e. expected '
                           'either 1, 3 or 4 channels on axis ' + str(channels_axis) + '. '
-                          'However, it was passed an array with shape ' + str(self.x.shape) +
+                          'However, it was passed an array with shape ' + str(
+                self.x.shape) +
                           ' (' + str(self.x.shape[channels_axis]) + ' channels).')
         if y is not None:
-            self.y = np.asarray(y)
+            if(isinstance(y,list)):
+              self.y = [np.asarray(each) for each in y]
+            else:
+              self.y = y
         else:
             self.y = None
         self.audio_data_generator = audio_data_generator
@@ -95,7 +108,10 @@ class NumpyArrayIterator(Iterator):
 
         if self.y is None:
             return batch_x
-        batch_y = self.y[index_array]
+        if(isinstance(self.y,list)):
+            batch_y = [each[index_array] for each in self.y]
+        else:
+            batch_y = self.y[index_array]
         return batch_x, batch_y
 
     def next(self):
@@ -110,6 +126,7 @@ class NumpyArrayIterator(Iterator):
         # The transformation of audio is not under thread lock
         # so it can be done in parallel
         return self._get_batches_of_transformed_samples(index_array)
+
 
 class AudioDataGenerator(object):
     """Generate batches of tensor audio data with real-time data augmentation.
@@ -150,7 +167,6 @@ class AudioDataGenerator(object):
                 "channels_first" mode means that the audio should have shape (samples, channels, width).
                 If you never set it, then it will be "channels_last".
         validation_split: Float. Fraction of audio reserved for validation (strictly between 0 and 1).
-   
     """
 
     def __init__(self,
@@ -190,7 +206,7 @@ class AudioDataGenerator(object):
         self.cval=cval
         self.shift=shift
         self.noise = noise
-        
+
         if data_format not in {'channels_last', 'channels_first'}:
             raise ValueError('`data_format` should be `"channels_last"` (channel after row and '
                              'column) or `"channels_first"` (channel before row and column). '
@@ -210,7 +226,7 @@ class AudioDataGenerator(object):
         self.mean = None
         self.std = None
         self.principal_components = None
-            
+
         if np.isscalar(zoom_range):
             self.zoom_range = [1 - zoom_range, 1 + zoom_range]
         elif len(zoom_range) == 2:
@@ -252,7 +268,6 @@ class AudioDataGenerator(object):
                                  'Received arg: ', noise)
             if noise[-1] not in {'Uniform','Normal'}:
                 raise ValueError('Distribution not recognised',noise[-1])
-            
 
     def flow(self, x, y=None, batch_size=32, shuffle=True, seed=None,
              save_to_dir=None, save_prefix='', subset=None):
@@ -267,16 +282,15 @@ class AudioDataGenerator(object):
                save_to_dir: None or str (default: None).
                 This allows you to optionally specify a directory
                 to which to save the augmented audio being generated
-
         # Returns
             An Iterator yielding tuples of `(x, y)` where `x` is a numpy array of data and
              `y` is a numpy array of corresponding labels."""
         if self.noise:
-            shuffle=True
+            shuffle = True
             warnings.warn('This AudioDataGenerator specifies '
                           '`noise`, which overrides the setting of'
                           '`shuffle` as True'
-                         )
+                          )
         return NumpyArrayIterator(
             x, y, self,
             batch_size=batch_size,
@@ -358,42 +372,41 @@ class AudioDataGenerator(object):
 
         if seed is not None:
             np.random.seed(seed)
-            
+
         if not (self.zoom_range[0] == 1 and self.zoom_range[1] == 1):
             zx = np.random.uniform(self.zoom_range[0], self.zoom_range[1])
             input_length = x.shape[data_row_axis]
-            x = resample(x, num=int(zx*x.shape[data_row_axis]), axis=data_row_axis)
+            x = resample(x, num=int(zx * x.shape[data_row_axis]), axis=data_row_axis)
             if x.shape[data_row_axis] >= input_length:
                 x = x[:input_length]
             else:
-                x = np.pad(x, ((0, input_length-x.shape[data_row_axis]),(0,0)),
-                           'constant',constant_values=(0,np.mean(x)))
-        
+                x = np.pad(x, ((0, input_length - x.shape[data_row_axis]), (0, 0)),
+                           'constant', constant_values=(0, np.mean(x)))
+
         if shift:
-            hx = np.random.uniform(-self.shift,self.shift)
-            x = shift(x , (int(hx*x.shape[data_row_axis]),0), mode=self.fill_mode, cval=self.cval)
-            
+            hx = np.random.uniform(-self.shift, self.shift)
+            x = shift(x, (int(hx * x.shape[data_row_axis]), 0), mode=self.fill_mode, cval=self.cval)
 
         if self.roll_range:
             tx = np.random.uniform(-self.roll_range, self.roll_range)
             if self.roll_range < 1:
                 tx *= x.shape[data_row_axis]
-            x = np.roll(x, int(tx), axis=(data_row_axis))        
-        
+            x = np.roll(x, int(tx), axis=(data_row_axis))
+
         if self.horizontal_flip:
             if np.random.random() < 0.5:
-                x = np.flip(x,axis=data_row_axis)
-                
+                x = np.flip(x, axis=data_row_axis)
+
         if (self.noise):
             if np.random.random() < 0.5:
-                if self.noise[-1]=='Uniform':
-                    x = x + np.random.uniform(self.noise[0],self.noise[1],size=x.shape)
-                elif self.noise[-1]=='Normal':
-                    x = x + np.random.normal(self.noise[0],self.noise[1],size=x.shape)
-        
+                if self.noise[-1] == 'Uniform':
+                    x = x + np.random.uniform(self.noise[0], self.noise[1], size=x.shape)
+                elif self.noise[-1] == 'Normal':
+                    x = x + np.random.normal(self.noise[0], self.noise[1], size=x.shape)
+
         if self.brightness_range is not None:
             x = random_brightness(x, self.brightness_range)
-            
+
         return x
 
     def fit(self, x,
@@ -427,7 +440,7 @@ class AudioDataGenerator(object):
         x = np.copy(x)
         if augment:
             raise NotImplementedError
-            
+
         if self.featurewise_center:
             self.mean = np.mean(x, axis=(0, self.row_axis))
             broadcast_shape = [1, 1]
@@ -441,7 +454,6 @@ class AudioDataGenerator(object):
             broadcast_shape[self.channel_axis - 1] = x.shape[self.channel_axis]
             self.std = np.reshape(self.std, broadcast_shape)
             x /= (self.std + K.epsilon())
-
 
         if self.zca_whitening:
             flat_x = np.reshape(x, (x.shape[0], x.shape[1] * x.shape[2]))
@@ -467,8 +479,9 @@ def random_brightness(x, brightness_range):
 
     u = np.random.uniform(brightness_range[0], brightness_range[1])
     x = u*x
-    
+
     return x
+
 
 class _Iterator(object):
     """Abstract base class for image data iterators.
@@ -479,30 +492,48 @@ class _Iterator(object):
         seed: Random seeding for data shuffling.
     """
 
-    def __init__(self, n, target_label, batch_size, shuffle, seed): # add target y to init(s)
+    def __init__(self, n, target_label, meta_label, batch_size, shuffle, seed):  # add target y to init(s)
 
-        self.target_label=target_label
+        self.target_label = target_label
+        self.meta_label = meta_label
         self.n = n
         self.shuffle = shuffle
         self.batch_index = 0
         self.total_batches_seen = 0
         self.lock = threading.Lock()
         self.index_generator = self._flow_index(batch_size, shuffle=shuffle, seed=seed)
-        self.current_idx = [0] * len(np.unique(self.y[self.target_label]))
-        self.exhaustion = [False] * len(np.unique(self.y[self.target_label]))
-        self.labels = np.unique(self.y[self.target_label])  # unique labels in y[target_label]
-        self.chunk_size = int(batch_size / len(self.labels))
-        print('Chunk size selected as %d' % self.chunk_size)
-        if not all(np.bincount(self.y[self.target_label])>=self.chunk_size):
-            warnings.warn('Number of samples for label %s is smaller than chunk size %d' %
-                          (str(self.labels[np.bincount(self.y[self.target_label])
-                                           <self.chunk_size]),self.chunk_size))
+        if self.meta_label is not None:
+            self.current_idx = [0] * len(np.unique(self.meta_label))
+            self.exhaustion = [False] * len(np.unique(self.meta_label))
+            self.labels = np.unique(self.meta_label)  # unique labels in y[target_label]
+            self.chunk_size = int(batch_size / len(self.labels))
+            self.steps_per_epoch = max(np.bincount(meta_label))//self.chunk_size
+            print(np.bincount(self.meta_label))
+            print(self.labels)
+            print('Chunk size selected as %d' % self.chunk_size)
+            if not all(np.bincount(self.meta_label) >= self.chunk_size):
+                warnings.warn('Number of samples for label %s is smaller than chunk size %d' %
+                              (str(self.labels[np.bincount(self.meta_label)
+                                               < self.chunk_size]), self.chunk_size))
+        else:
+            self.current_idx = [0] * len(np.unique(self.y[self.target_label]))
+            self.exhaustion = [False] * len(np.unique(self.y[self.target_label]))
+            self.labels = np.unique(self.y[self.target_label])  # unique labels in y[target_label]
+            self.chunk_size = int(batch_size / len(self.labels))
+            print('Chunk size selected as %d' % self.chunk_size)
+            if not all(np.bincount(self.y[self.target_label]) >= self.chunk_size):
+                warnings.warn('Number of samples for label %s is smaller than chunk size %d' %
+                              (str(self.labels[np.bincount(self.y[self.target_label])
+                                               < self.chunk_size]), self.chunk_size))
 
     def reset(self):
         self.batch_index = 0
-        self.exhaustion = [False] * len(np.unique(self.y[self.target_label]))
-        self.current_idx = [0] * len(np.unique(self.y[self.target_label]))
-
+        if self.meta_label is not None:
+            self.exhaustion = [False] * len(np.unique(self.meta_label))
+            self.current_idx = [0] * len(np.unique(self.meta_label))
+        else:
+            self.exhaustion = [False] * len(np.unique(self.y[self.target_label]))
+            self.current_idx = [0] * len(np.unique(self.y[self.target_label]))
 
     def _flow_index(self, batch_size=32, shuffle=False, seed=None):
         # Ensure self.batch_index is 0.
@@ -513,25 +544,32 @@ class _Iterator(object):
 
             if self.batch_index == 0:
                 label_idx = []
-                for idx,each in enumerate(self.labels):
-                    label_idx.append(np.hstack(np.where(self.y[self.target_label] == each)))
+                for idx, each in enumerate(self.labels):
+                    
+                    if self.meta_label is not None:
+                        label_idx.append(np.hstack(np.where(self.meta_label == each)))
+                    else:
+                        label_idx.append(np.hstack(np.where(self.y[self.target_label] == each)))
+                        
                     if shuffle:
-                        label_idx[idx] = np.random.permutation(label_idx[idx]) # permute for first batch
+                        label_idx[idx] = np.random.permutation(label_idx[idx])  # permute for first batch
                 label_count = [len(each) for each in label_idx]
                 # #print(label_count)
 
             index_array = []
-            for idx,num in enumerate(label_count):
+            for idx, num in enumerate(label_count):
                 # #print(self.current_idx)
-                if (num - self.current_idx[idx]) >= self.chunk_size: ## if there is space in the current label
-                    index_array = index_array + list(label_idx[idx][self.current_idx[idx]:self.current_idx[idx]+self.chunk_size])
+                if (num - self.current_idx[idx]) >= self.chunk_size:  ## if there is space in the current label
+                    index_array = index_array + list(
+                        label_idx[idx][self.current_idx[idx]:self.current_idx[idx] + self.chunk_size])
                     self.current_idx[idx] += self.chunk_size
                 ## include remaining samples
                 else:
                     self.exhaustion[idx] = True
                     self.current_idx[idx] = 0
                     label_idx[idx] = np.random.permutation(label_idx[idx])
-                    index_array = index_array + list(label_idx[idx][self.current_idx[idx]:self.current_idx[idx]+self.chunk_size])
+                    index_array = index_array + list(
+                        label_idx[idx][self.current_idx[idx]:self.current_idx[idx] + self.chunk_size])
                     self.current_idx[idx] += self.chunk_size
 
             self.total_batches_seen += 1
@@ -576,7 +614,7 @@ class _NumpyArrayIterator(_Iterator):
             validation_split is set in AudioDataGenerator.
     """
 
-    def __init__(self, x, y, target_label, flag, audio_data_generator,
+    def __init__(self, x, y, target_label, meta_label, flag, audio_data_generator,
                  batch_size=32, shuffle=False, seed=None,
                  data_format=None,
                  save_to_dir=None, save_prefix='', save_format='png',
@@ -593,7 +631,7 @@ class _NumpyArrayIterator(_Iterator):
                     for i in range(np.shape(y)[0]):
                         y[i] = y[i][:split_idx]
             else:
-                x= x[split_idx:]
+                x = x[split_idx:]
                 if y is not None:
                     for i in range(np.shape(y)[0]):
                         y[i] = y[i][:split_idx]
@@ -601,7 +639,6 @@ class _NumpyArrayIterator(_Iterator):
         if data_format is None:
             data_format = 'channels_last'
         self.x = np.asarray(x, dtype=K.floatx())
-
         if self.x.ndim != 3:
             raise ValueError('Input data in `NumpyArrayIterator` '
                              'should have rank 3. You passed an array '
@@ -610,9 +647,11 @@ class _NumpyArrayIterator(_Iterator):
         if self.x.shape[channels_axis] not in {1, 2, 3, 4}:
             warnings.warn('NumpyArrayIterator is set to use the '
                           'data format convention "' + data_format + '" '
-                          '(channels on axis ' + str(channels_axis) + '), i.e. expected '
-                          'either 1, 3 or 4 channels on axis ' + str(channels_axis) + '. '
-                          'However, it was passed an array with shape ' + str(self.x.shape) +' (' + str(self.x.shape[channels_axis]) + ' channels).')
+                                                                     '(channels on axis ' + str(
+                channels_axis) + '), i.e. expected '
+                                 'either 1, 3 or 4 channels on axis ' + str(channels_axis) + '. '
+                                                                                             'However, it was passed an array with shape ' + str(
+                self.x.shape) + ' (' + str(self.x.shape[channels_axis]) + ' channels).')
 
         self.flag = flag
         if y is not None:
@@ -622,15 +661,14 @@ class _NumpyArrayIterator(_Iterator):
             if len(np.unique(sizes_of_branches)) > 1:
                 raise ValueError('Non coherent input shapes')
         else:
-            self.y=y
+            self.y = y
 
         self.audio_data_generator = audio_data_generator
         self.data_format = data_format
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
-        super(_NumpyArrayIterator, self).__init__(x.shape[0], target_label, batch_size, shuffle, seed)
-
+        super(_NumpyArrayIterator, self).__init__(x.shape[0], target_label, meta_label, batch_size, shuffle, seed)
 
     def _get_batches_of_transformed_samples(self, index_array):
         batch_x = np.zeros(tuple([len(index_array)] + list(self.x.shape)[1:]),
@@ -649,15 +687,15 @@ class _NumpyArrayIterator(_Iterator):
 
         batch_y = [each[index_array] for each in self.y]
 
-        if self.flag==1:
+        if self.flag == 1:
             batch_y[self.target_label] = to_categorical(batch_y[self.target_label])
-        if self.flag==2:
+        if self.flag == 2:
             print()
-        if self.flag==3:
+        if self.flag == 3:
             print()
 
-        if len(batch_y)==1:
-            batch_y=batch_y[0]
+        if len(batch_y) == 1:
+            batch_y = batch_y[0]
         return batch_x, batch_y
 
     def next(self):
@@ -714,6 +752,7 @@ class BalancedAudioDataGenerator(AudioDataGenerator):
             If you never set it, then it will be "channels_last".
         validation_split: Float. Fraction of images reserved for validation (strictly between 0 and 1).
     """
+
     ### add target y labels to use for balancing
     ## consider issues if y is not list
     def __init__(self,
@@ -736,27 +775,26 @@ class BalancedAudioDataGenerator(AudioDataGenerator):
                  noise=None,
                  validation_split=0.0):
 
-        super(BalancedAudioDataGenerator,self).__init__(featurewise_center=featurewise_center,
-                 samplewise_center=samplewise_center,
-                 featurewise_std_normalization=featurewise_std_normalization,
-                 samplewise_std_normalization=samplewise_std_normalization,
-                 zca_whitening=zca_whitening,
-                 zca_epsilon=zca_epsilon,
-                 roll_range=roll_range,
-                 brightness_range=brightness_range,
-                 zoom_range=zoom_range,
-                 shift=shift,
-                 fill_mode=fill_mode,
-                 cval=cval,
-                 horizontal_flip=horizontal_flip,
-                 rescale=rescale,
-                 preprocessing_function=preprocessing_function,
-                 data_format=data_format,
-                 noise=noise,
-                 validation_split=validation_split)
+        super(BalancedAudioDataGenerator, self).__init__(featurewise_center=featurewise_center,
+                                                         samplewise_center=samplewise_center,
+                                                         featurewise_std_normalization=featurewise_std_normalization,
+                                                         samplewise_std_normalization=samplewise_std_normalization,
+                                                         zca_whitening=zca_whitening,
+                                                         zca_epsilon=zca_epsilon,
+                                                         roll_range=roll_range,
+                                                         brightness_range=brightness_range,
+                                                         zoom_range=zoom_range,
+                                                         shift=shift,
+                                                         fill_mode=fill_mode,
+                                                         cval=cval,
+                                                         horizontal_flip=horizontal_flip,
+                                                         rescale=rescale,
+                                                         preprocessing_function=preprocessing_function,
+                                                         data_format=data_format,
+                                                         noise=noise,
+                                                         validation_split=validation_split)
 
-
-    def flow(self, x, y=None, target_label=0, batch_size=32, shuffle=True, seed=None,
+    def flow(self, x, y=None, target_label=0, meta_label=None, batch_size=32, shuffle=True, seed=None,
              save_to_dir=None, save_prefix='', save_format='png', subset=None):
         """Takes numpy data & label arrays, and generates batches of
             augmented/normalized data.
@@ -779,7 +817,11 @@ class BalancedAudioDataGenerator(AudioDataGenerator):
         # Returns
             An Iterator yielding tuples of `(x, y)` where `x` is a numpy array of image data and
              `y` is a numpy array of corresponding labels."""
-        y = y.copy()
+        try: # for python 3.3+
+            y = y.copy()
+        except:
+            import copy
+            y = copy.deepcopy(y)
         if self.noise:
             shuffle = True
             warnings.warn('This AudioDataGenerator specifies '
@@ -791,20 +833,27 @@ class BalancedAudioDataGenerator(AudioDataGenerator):
         ## handle if y is not a list
         if not type(y) == list and y is not None:
             y = [y]
-        ## handle y type
-        try:
-            if (y[target_label].shape[1] > 1):
-                flag = 1
-                y[target_label] = np.argmax(y[target_label], axis=-1)
-            else:
-                flag = 2
-                y[target_label] = np.argmax(y[target_label], axis=-1)
-        except:
-            flag = 3
 
-    # everything is of shape (n,)
+        if meta_label is not None:
+            warnings.warn('`meta_labels` specified, will use meta_labels instead of target_label')
+            flag=0
+            if not all([len(meta_label)==len(lab) for lab in y]):
+                raise ValueError('length of `meta_label` should be equal to `y`')
+        else:
+            ## handle y type
+            try:
+                if (y[target_label].shape[1] > 1):
+                    flag = 1
+                    y[target_label] = np.argmax(y[target_label], axis=-1)
+                else:
+                    flag = 2
+                    y[target_label] = np.argmax(y[target_label], axis=-1)
+            except:
+                flag = 3
+
+        # everything is of shape (n,)
         return _NumpyArrayIterator(
-            x=x, y=y, target_label=target_label, flag=flag, audio_data_generator=self,
+            x=x, y=y, target_label=target_label, meta_label=meta_label, flag=flag, audio_data_generator=self,
             batch_size=batch_size,
             shuffle=shuffle,
             seed=seed,
